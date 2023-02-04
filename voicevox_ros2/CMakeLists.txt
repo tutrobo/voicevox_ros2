@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.17)
+cmake_minimum_required(VERSION 3.8)
 project(voicevox_ros2)
 
 # Default to C99
@@ -15,22 +15,25 @@ if(CMAKE_COMPILER_IS_GNUCXX OR CMAKE_CXX_COMPILER_ID MATCHES "Clang")
   add_compile_options(-Wall -Wextra -Wpedantic)
 endif()
 
-# find dependencies
+# 依存関係
 find_package(ament_cmake REQUIRED)
 find_package(rclcpp REQUIRED)
 find_package(rclcpp_components REQUIRED)
+find_package(sdl2_vendor REQUIRED)
+find_package(SDL2 REQUIRED)
 find_package(voicevox_core_vendor REQUIRED)
 find_package(voicevox_core REQUIRED)
 find_package(voicevox_ros2_msgs REQUIRED)
 
-# Composable Node
-add_library(${PROJECT_NAME}_component SHARED
-  src/voicevox_ros2_component.cpp
+# Composable Nodeを作成
+add_library(${PROJECT_NAME}_component SHARED src/voicevox_ros2_component.cpp)
+target_include_directories(${PROJECT_NAME}_component PRIVATE include)
+target_link_libraries(${PROJECT_NAME}_component
+  pthread
+  SDL2::SDL2
+  SDL2_mixer
+  voicevox_core::voicevox_core
 )
-target_include_directories(${PROJECT_NAME}_component
-  PRIVATE include
-)
-target_link_libraries(${PROJECT_NAME}_component voicevox_core::voicevox_core ao)
 ament_target_dependencies(${PROJECT_NAME}_component
   rclcpp
   rclcpp_components
@@ -38,19 +41,25 @@ ament_target_dependencies(${PROJECT_NAME}_component
   voicevox_ros2_msgs
 )
 rclcpp_components_register_node(${PROJECT_NAME}_component
-  PLUGIN      "tutrobo::VoicevoxRos2"
-  EXECUTABLE  "${PROJECT_NAME}"
+  PLUGIN "tutrobo::VoicevoxRos2"
+  EXECUTABLE ${PROJECT_NAME}
 )
 
 # インストール
-ament_export_targets(${PROJECT_NAME}_export HAS_LIBRARY_TARGET)
+ament_export_targets(export_${PROJECT_NAME}_component HAS_LIBRARY_TARGET)
+ament_export_dependencies(
+  rclcpp
+  rclcpp_components
+  voicevox_core_vendor
+  voicevox_ros2_msgs
+)
+
 install(
   TARGETS ${PROJECT_NAME}_component
-  EXPORT ${PROJECT_NAME}_export
+  EXPORT export_${PROJECT_NAME}_component
   LIBRARY DESTINATION lib
   ARCHIVE DESTINATION lib
   RUNTIME DESTINATION bin
-  INCLUDES DESTINATION include
 )
 
 if(BUILD_TESTING)

@@ -2,7 +2,7 @@
 <?xml-model href="http://download.ros.org/schema/package_format3.xsd" schematypens="http://www.w3.org/2001/XMLSchema"?>
 <package format="3">
   <name>voicevox_ros2</name>
-  <version>0.0.1</version>
+  <version>1.0.0</version>
   <description>voicevox_ros2</description>
   <maintainer email="iwai.rin.ij@tut.jp">Rin Iwai</maintainer>
   <license>Apache License 2.0</license>
@@ -11,9 +11,10 @@
 
   <depend>rclcpp</depend>
   <depend>rclcpp_components</depend>
+  <depend>sdl2_vendor</depend>
+  <depend>sdl2-mixer</depend>
   <depend>voicevox_core_vendor</depend>
   <depend>voicevox_ros2_msgs</depend>
-  <depend>libao-dev</depend>
 
   <test_depend>ament_lint_auto</test_depend>
   <test_depend>ament_lint_common</test_depend>
