@@ -6,7 +6,7 @@ find_package(ament_cmake REQUIRED)
 option(WITH_CUDA "Use voicevox_core with CUDA" OFF)
 option(WITH_DIRECTML "Use voicevox_core with DirectML" OFF)
 
-set(voicevox_core_VERSION 0.14.0)
+set(voicevox_core_VERSION 0.14.1)
 set(voicevox_additional_libraries_VERSION 0.1.0)
 
 # OS名を変換
