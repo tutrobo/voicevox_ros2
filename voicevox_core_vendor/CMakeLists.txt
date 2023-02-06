@@ -82,6 +82,6 @@ install(
 )
 
 ament_export_include_directories(include)
-ament_export_libraries(voicevox_core)
+ament_export_library_names(voicevox_core)
 
 ament_package()

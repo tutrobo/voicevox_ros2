@@ -29,7 +29,6 @@ target_link_libraries(${PROJECT_NAME}_component
   pthread
   SDL2
   SDL2_mixer
-  voicevox_core
 )
 ament_target_dependencies(${PROJECT_NAME}_component
   rclcpp
