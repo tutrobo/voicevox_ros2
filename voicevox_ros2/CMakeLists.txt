@@ -19,8 +19,6 @@ endif()
 find_package(ament_cmake REQUIRED)
 find_package(rclcpp REQUIRED)
 find_package(rclcpp_components REQUIRED)
-find_package(sdl2_vendor REQUIRED)
-find_package(SDL2 REQUIRED)
 find_package(voicevox_core_vendor REQUIRED)
 find_package(voicevox_ros2_msgs REQUIRED)
 
@@ -29,7 +27,7 @@ add_library(${PROJECT_NAME}_component SHARED src/voicevox_ros2_component.cpp)
 target_include_directories(${PROJECT_NAME}_component PRIVATE include)
 target_link_libraries(${PROJECT_NAME}_component
   pthread
-  SDL2::SDL2
+  SDL2
   SDL2_mixer
   voicevox_core
 )
