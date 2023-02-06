@@ -14,11 +14,11 @@ jobs:
     steps:
       - uses: actions/checkout@v3
 
-      - name: Update dependencies
+      - name: Install dependencies
         shell: bash
         run: |
           apt update && rosdep update
-          rosdep install -yi --rosdistro humble --from-paths .
+          rosdep install -yi --from-paths .
 
       - name: Build workspace
         shell: bash
@@ -33,11 +33,11 @@ jobs:
     steps:
       - uses: actions/checkout@v3
 
-      - name: Update dependencies
+      - name: Install dependencies
         shell: bash
         run: |
           apt update && rosdep update
-          rosdep install -yi --rosdistro humble --from-paths .
+          rosdep install -yi --from-paths .
 
       - name: Build workspace
         shell: bash
