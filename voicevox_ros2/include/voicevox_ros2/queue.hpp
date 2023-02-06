@@ -29,7 +29,7 @@ template <class T, size_t N> class Queue {
 
 public:
   void push_back(const T &x) {
-    std::unique_lock<std::mutex> lock{mtx_};
+    std::unique_lock lock{mtx_};
     if (queue_.size() < N) {
       queue_.push_back(x);
       cv_.notify_all();
@@ -37,7 +37,7 @@ public:
   }
 
   void push_front(const T &x) {
-    std::unique_lock<std::mutex> lock{mtx_};
+    std::unique_lock lock{mtx_};
     if (queue_.size() == N) {
       queue_.pop_back();
     }
@@ -46,7 +46,7 @@ public:
   }
 
   bool pop(T &x) {
-    std::unique_lock<std::mutex> lock{mtx_};
+    std::unique_lock lock{mtx_};
     cv_.wait(lock, [this] { return !queue_.empty() || aborted_; });
     if (aborted_) {
       return false;
@@ -58,7 +58,7 @@ public:
   }
 
   void abort() {
-    std::lock_guard<std::mutex> lock{mtx_};
+    std::unique_lock lock{mtx_};
     aborted_ = true;
     cv_.notify_all();
   }

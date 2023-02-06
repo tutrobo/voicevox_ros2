@@ -17,7 +17,6 @@
 #pragma once
 
 #include <deque>
-#include <mutex>
 #include <unordered_map>
 
 #include <SDL2/SDL_mixer.h>
@@ -25,19 +24,15 @@
 class Mixer {
   std::unordered_map<int, Mix_Chunk *> channels_;
   std::deque<Mix_Chunk *> queue_;
-  std::mutex mtx_;
 
 public:
   void play(Mix_Chunk *chunk) {
     Mix_HaltChannel(-1);
-    std::unique_lock lock{mtx_};
     channels_[Mix_PlayChannel(-1, chunk, 0)] = chunk;
   }
 
   void enqueue(Mix_Chunk *chunk) {
-    std::unique_lock lock{mtx_};
     if (queue_.empty() && Mix_Playing(-1) == 0) {
-      lock.unlock();
       play(chunk);
     } else {
       queue_.push_back(chunk);
@@ -45,13 +40,11 @@ public:
   }
 
   void stop(int channel) {
-    std::unique_lock lock{mtx_};
     Mix_FreeChunk(channels_[channel]);
     channels_.erase(channel);
     if (!queue_.empty()) {
       Mix_Chunk *chunk = queue_.front();
       queue_.pop_front();
-      lock.unlock();
       play(chunk);
     }
   }
@@ -59,7 +52,6 @@ public:
   void stop_all() {
     Mix_ChannelFinished(nullptr);
     Mix_HaltChannel(-1);
-    std::unique_lock lock{mtx_};
     for (const auto &kv : channels_) {
       Mix_FreeChunk(kv.second);
     }
