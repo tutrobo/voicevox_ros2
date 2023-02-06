@@ -11,7 +11,7 @@
 
   <depend>rclcpp</depend>
   <depend>rclcpp_components</depend>
-  <depend>sdl2</depend>
+  <depend>sdl2_vendor</depend>
   <depend>sdl2-mixer</depend>
   <depend>voicevox_core_vendor</depend>
   <depend>voicevox_ros2_msgs</depend>
