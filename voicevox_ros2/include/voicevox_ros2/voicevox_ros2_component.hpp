@@ -115,7 +115,7 @@ private:
 
     while (this->talk_queue_.pop(msg)) {
       if (!voicevox_is_model_loaded(msg.speaker_id)) {
-        RCLCPP_ERROR(this->get_logger(), "Model id %ld is not loaded.",
+        RCLCPP_ERROR(this->get_logger(), "Model id %d is not loaded.",
                      msg.speaker_id);
         continue;
       }
