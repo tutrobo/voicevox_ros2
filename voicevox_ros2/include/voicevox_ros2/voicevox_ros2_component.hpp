@@ -23,8 +23,8 @@
 #include <SDL2/SDL.h>
 #include <SDL2/SDL_mixer.h>
 
-#include "voicevox_core.h"
 #include "voicevox_core_vendor/open_jtalk_dict_dir.h"
+#include "voicevox_core_vendor/voicevox_core.h"
 #include "voicevox_ros2_msgs/msg/talk.hpp"
 
 #include "mixer.hpp"

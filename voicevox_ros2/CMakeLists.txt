@@ -22,7 +22,6 @@ find_package(rclcpp_components REQUIRED)
 find_package(sdl2_vendor REQUIRED)
 find_package(SDL2 REQUIRED)
 find_package(voicevox_core_vendor REQUIRED)
-find_package(voicevox_core REQUIRED)
 find_package(voicevox_ros2_msgs REQUIRED)
 
 # Composable Nodeを作成
@@ -32,7 +31,7 @@ target_link_libraries(${PROJECT_NAME}_component
   pthread
   SDL2::SDL2
   SDL2_mixer
-  voicevox_core::voicevox_core
+  voicevox_core
 )
 ament_target_dependencies(${PROJECT_NAME}_component
   rclcpp

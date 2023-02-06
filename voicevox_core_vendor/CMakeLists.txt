@@ -46,12 +46,12 @@ FetchContent_MakeAvailable(voicevox_core open_jtalk_dict)
 
 install(
   DIRECTORY ${voicevox_core_SOURCE_DIR}/
-  DESTINATION lib/${PROJECT_NAME}/voicevox_core
+  DESTINATION lib
 )
 
 install(
   DIRECTORY ${open_jtalk_dict_SOURCE_DIR}/
-  DESTINATION lib/${PROJECT_NAME}/open_jtalk_dict
+  DESTINATION lib/open_jtalk_dict
 )
 
 # voicevox_additional_librariesの取得, インストール
@@ -63,7 +63,7 @@ if(DEFINED voicevox_additional_libraries_URL)
 
   install(
     DIRECTORY ${voicevox_additional_libraries_SOURCE_DIR}/
-    DESTINATION lib/${PROJECT_NAME}/voicevox_core
+    DESTINATION lib
   )
 endif()
 
@@ -75,15 +75,13 @@ configure_file(
 )
 
 install(
-  FILES ${CMAKE_CURRENT_BINARY_DIR}/open_jtalk_dict_dir.h
+  FILES
+    ${voicevox_core_SOURCE_DIR}/voicevox_core.h
+    ${CMAKE_CURRENT_BINARY_DIR}/open_jtalk_dict_dir.h
   DESTINATION include/${PROJECT_NAME}/
 )
 
-install(
-  DIRECTORY cmake
-  DESTINATION share/${PROJECT_NAME}
-)
-
 ament_export_include_directories(include)
+ament_export_libraries(voicevox_core)
 
-ament_package(CONFIG_EXTRAS "voicevox_core_vendor-extras.cmake")
+ament_package()
