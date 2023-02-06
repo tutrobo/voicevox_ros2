@@ -7,13 +7,40 @@ on:
     branches: [ "master" ]
 
 jobs:
-  build:
-    runs-on: ubuntu-22.04
+  cpu:
+    runs-on: ubuntu-latest
+    container:
+      image: ros:humble
     steps:
       - uses: actions/checkout@v3
-      - uses: ros-tooling/setup-ros@v0.3
-        with:
-          required-ros-distributions: humble
-      - uses: ros-tooling/action-ros-ci@v0.2
-        with:
-          target-ros2-distro: humble
+
+      - name: Update dependencies
+        shell: bash
+        run: |
+          apt update && rosdep update
+          rosdep install -yi --rosdistro humble --from-paths .
+
+      - name: Build workspace
+        shell: bash
+        run: |
+          source /opt/ros/humble/setup.bash
+          colcon build --symlink-install
+
+  gpu_cuda:
+    runs-on: ubuntu-latest
+    container:
+      image: ros:humble
+    steps:
+      - uses: actions/checkout@v3
+
+      - name: Update dependencies
+        shell: bash
+        run: |
+          apt update && rosdep update
+          rosdep install -yi --rosdistro humble --from-paths .
+
+      - name: Build workspace
+        shell: bash
+        run: |
+          source /opt/ros/humble/setup.bash
+          colcon build --symlink-install --cmake-args -DWITH_CUDA=ON
