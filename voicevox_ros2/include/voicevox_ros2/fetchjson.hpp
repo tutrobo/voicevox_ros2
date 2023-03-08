@@ -1,5 +1,9 @@
 #pragma once
 
+#define CPPHTTPLIB_CONNECTION_TIMEOUT_SECOND 300
+#define CPPHTTPLIB_READ_TIMEOUT_SECOND 300
+#define CPPHTTPLIB_WRITE_TIMEOUT_SECOND 300
+
 #include <future>
 #include <optional>
 #include <regex>
@@ -18,43 +22,49 @@ inline std::pair<std::string, std::string> split_url(const std::string &url) {
   return std::pair{host, path};
 }
 
-inline std::future<std::optional<nlohmann::json>> get(const std::string &url, const nlohmann::json &headers = {}) {
-  return std::async(std::launch::async, [url, headers]() -> std::optional<nlohmann::json> {
-    auto [host, path] = split_url(url);
-    httplib::Client client{host};
-    httplib::Result response = client.Get(path, headers.get<httplib::Headers>());
-    if (response.error() != httplib::Error::Success) {
-      return std::nullopt;
-    }
+inline std::future<std::optional<nlohmann::json>>
+get(const std::string &url, const nlohmann::json &headers = {}) {
+  return std::async(std::launch::async,
+                    [url, headers]() -> std::optional<nlohmann::json> {
+                      auto [host, path] = split_url(url);
+                      httplib::Client client{host};
+                      httplib::Result response =
+                          client.Get(path, headers.get<httplib::Headers>());
+                      if (response.error() != httplib::Error::Success) {
+                        return std::nullopt;
+                      }
 
-    std::optional<nlohmann::json> result;
-    try {
-      result = nlohmann::json::parse(response->body);
-    } catch (...) {
-      result = std::nullopt;
-    }
-    return result;
-  });
+                      std::optional<nlohmann::json> result;
+                      try {
+                        result = nlohmann::json::parse(response->body);
+                      } catch (...) {
+                        result = std::nullopt;
+                      }
+                      return result;
+                    });
 }
 
 template <class... Args>
-inline std::future<std::optional<nlohmann::json>> post(const std::string &url, const nlohmann::json &body,
-                                                       const nlohmann::json &headers = {}) {
-  return std::async(std::launch::async, [url, headers, body]() -> std::optional<nlohmann::json> {
-    auto [host, path] = split_url(url);
-    httplib::Client client{host};
-    httplib::Result response = client.Post(path, headers, body.dump(), "application/json");
-    if (response.error() != httplib::Error::Success) {
-      return std::nullopt;
-    }
+inline std::future<std::optional<nlohmann::json>>
+post(const std::string &url, const nlohmann::json &body,
+     const nlohmann::json &headers = {}) {
+  return std::async(std::launch::async,
+                    [url, headers, body]() -> std::optional<nlohmann::json> {
+                      auto [host, path] = split_url(url);
+                      httplib::Client client{host};
+                      httplib::Result response = client.Post(
+                          path, headers, body.dump(), "application/json");
+                      if (response.error() != httplib::Error::Success) {
+                        return std::nullopt;
+                      }
 
-    std::optional<nlohmann::json> result;
-    try {
-      result = nlohmann::json::parse(response->body);
-    } catch (...) {
-      result = std::nullopt;
-    }
-    return result;
-  });
+                      std::optional<nlohmann::json> result;
+                      try {
+                        result = nlohmann::json::parse(response->body);
+                      } catch (...) {
+                        result = std::nullopt;
+                      }
+                      return result;
+                    });
 }
 } // namespace fetchjson
