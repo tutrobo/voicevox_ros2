@@ -21,4 +21,5 @@ voicevox_ros2_node:
   ros__parameters:
     cpu_num_threads: 1
     load_models: [3, 8]
+    openai_api_key: YOUR_API_KEY
 ```
