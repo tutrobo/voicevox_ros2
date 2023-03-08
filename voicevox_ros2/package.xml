@@ -15,6 +15,7 @@
   <depend>sdl2-mixer</depend>
   <depend>voicevox_core_vendor</depend>
   <depend>voicevox_ros2_msgs</depend>
+  <depend>libssl-dev</depend>
 
   <test_depend>ament_lint_auto</test_depend>
   <test_depend>ament_lint_common</test_depend>

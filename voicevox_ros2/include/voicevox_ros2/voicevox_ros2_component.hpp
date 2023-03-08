@@ -27,10 +27,13 @@
 #include "voicevox_core_vendor/voicevox_core.h"
 #include "voicevox_ros2_msgs/msg/talk.hpp"
 
+#include "fetchjson.hpp"
 #include "mixer.hpp"
 #include "queue.hpp"
 
 namespace tutrobo {
+using namespace nlohmann;
+
 class VoicevoxRos2 : public rclcpp::Node {
   Queue<voicevox_ros2_msgs::msg::Talk, 10> talk_queue_;
   std::thread talk_thread_;
@@ -38,6 +41,10 @@ class VoicevoxRos2 : public rclcpp::Node {
       voicevox_ros2_sub_;
 
   static inline Mixer mixer;
+
+  std::string openai_api_key_;
+  json chat_request_{{"model", "gpt-3.5-turbo"}, {"messages", json::array()}};
+  json &messages_ = chat_request_["messages"];
 
 public:
   VoicevoxRos2(const rclcpp::NodeOptions &options)
@@ -51,6 +58,8 @@ public:
     auto cpu_num_threads = get_parameter("cpu_num_threads").as_int();
     declare_parameter("load_models", std::vector<int64_t>{});
     auto load_models = get_parameter("load_models").as_integer_array();
+    declare_parameter("openai_api_key", "");
+    openai_api_key_ = get_parameter("openai_api_key").as_string();
 
     // voicevox_core初期化
     RCLCPP_INFO(this->get_logger(), "Initializing voicevox_core...");
@@ -114,6 +123,31 @@ private:
     voicevox_ros2_msgs::msg::Talk msg;
 
     while (this->talk_queue_.pop(msg)) {
+      messages_.push_back(json{
+          {"role", "user"},
+          {"content", msg.text},
+      });
+
+      auto res =
+          fetchjson::post(
+              "https://api.openai.com/v1/chat/completions", chat_request_,
+              json{
+                  {"Content-Type", "application/json"},
+                  {"Authorization", std::string{"Bearer "} + openai_api_key_},
+              })
+              .get();
+
+      if (!res) {
+        continue;
+      }
+      if (!(*res)["choices"][0]["message"]["content"].is_string()) {
+        continue;
+      }
+      messages_.push_back((*res)["choices"][0]["message"]);
+
+      std::string response =
+          (*res)["choices"][0]["message"]["content"].get<std::string>();
+
       if (!voicevox_is_model_loaded(msg.speaker_id)) {
         RCLCPP_ERROR(this->get_logger(), "Model id %d is not loaded.",
                      msg.speaker_id);
@@ -121,11 +155,11 @@ private:
       }
 
       RCLCPP_INFO(this->get_logger(), "Synthesizing \"%s\"...",
-                  msg.text.c_str());
+                  response.c_str());
       [[maybe_unused]] size_t wav_size = 0;
       uint8_t *wav = nullptr;
       VoicevoxResultCode voicevox_result =
-          voicevox_tts(msg.text.c_str(), msg.speaker_id,
+          voicevox_tts(response.c_str(), msg.speaker_id,
                        voicevox_make_default_tts_options(), &wav_size, &wav);
       if (voicevox_result != VOICEVOX_RESULT_OK) {
         RCLCPP_ERROR(this->get_logger(), "%s",
