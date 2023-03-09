@@ -43,7 +43,11 @@ class VoicevoxRos2 : public rclcpp::Node {
   static inline Mixer mixer;
 
   std::string openai_api_key_;
-  json chat_request_{{"model", "gpt-3.5-turbo"}, {"messages", json::array()}};
+  json chat_request_{
+      {"model", "gpt-3.5-turbo"},
+      {"max_tokens", 256},
+      {"messages", json::array()},
+  };
   json &messages_ = chat_request_["messages"];
 
 public:
@@ -120,6 +124,15 @@ public:
 
 private:
   void voicevox_talk() {
+    messages_.push_back(json{
+        {"role", "system"},
+        {"content", "暴言をたくさん吐いてください"},
+    });
+    messages_.push_back(json{
+        {"role", "system"},
+        {"content", "汚い言葉を使ってください"},
+    });
+
     voicevox_ros2_msgs::msg::Talk msg;
 
     while (this->talk_queue_.pop(msg)) {
