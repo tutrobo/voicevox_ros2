@@ -6,8 +6,24 @@ find_package(ament_cmake REQUIRED)
 option(WITH_CUDA "Use voicevox_core with CUDA" OFF)
 option(WITH_DIRECTML "Use voicevox_core with DirectML" OFF)
 
-set(voicevox_core_VERSION 0.14.1)
+set(voicevox_core_VERSION 0.15.3)
 set(voicevox_additional_libraries_VERSION 0.1.0)
+
+# デバイスの選択
+set(DEVICE cpu)
+if(WITH_CUDA)
+  set(DEVICE cuda)
+elseif(WITH_DIRECTML)
+  set(DEVICE directml)
+endif()
+
+# アーキテクチャ名を変換
+set(CPU_ARCH_x86_64 x64)
+set(CPU_ARCH_amd64 x64)
+set(CPU_ARCH_AMD64 x64)
+set(CPU_ARCH_arm64 arm64)
+set(CPU_ARCH_aarch64 arm64)
+set(CPU_ARCH ${CPU_ARCH_${CMAKE_SYSTEM_PROCESSOR}})
 
 # OS名を変換
 set(OS_Linux linux)
@@ -15,57 +31,26 @@ set(OS_Windows windows)
 set(OS_Darwin osx)
 set(OS ${OS_${CMAKE_SYSTEM_NAME}})
 
-# アーキテクチャ名を変換
-set(ARCH_x86_64 x64)
-set(ARCH_arm64 arm64)
-set(ARCH_aarch64 arm64)
-set(ARCH ${ARCH_${CMAKE_SYSTEM_PROCESSOR}})
-
-# デバイスの選択
-set(DEVICE cpu)
-if(WITH_CUDA)
-  set(DEVICE gpu)
-  set(voicevox_additional_libraries_URL https://github.com/VOICEVOX/voicevox_additional_libraries/releases/download/${voicevox_additional_libraries_VERSION}/CUDA-${OS}-${ARCH}.zip)
-elseif(WITH_DIRECTML)
-  set(DEVICE directml)
-  set(voicevox_additional_libraries_URL https://github.com/VOICEVOX/voicevox_additional_libraries/releases/download/${${voicevox_additional_libraries_VERSION}}/DirectML-${OS}-${ARCH}.zip)
+# voicevox_coreの取得, インストール
+if(${OS} STREQUAL "windows")
+  add_custom_target(voicevox_core ALL
+    COMMAND curl -sSfL https://github.com/VOICEVOX/voicevox_core/releases/latest/download/download-${OS}-${CPU_ARCH}.exe -o download.exe
+    COMMAND download.exe --version ${voicevox_core_VERSION} --additional-libraries-version ${voicevox_additional_libraries_VERSION} --device ${DEVICE} --cpu-arch ${CPU_ARCH} --os ${OS}
+    WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
+  )
+else()
+  add_custom_target(voicevox_core ALL
+    COMMAND curl -sSfL https://github.com/VOICEVOX/voicevox_core/releases/latest/download/download-${OS}-${CPU_ARCH} -o download
+    COMMAND chmod +x download
+    COMMAND ./download --version ${voicevox_core_VERSION} --additional-libraries-version ${voicevox_additional_libraries_VERSION} --device ${DEVICE} --cpu-arch ${CPU_ARCH} --os ${OS}
+    WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
+  )
 endif()
 
-set(voicevox_core_URL https://github.com/VOICEVOX/voicevox_core/releases/download/${voicevox_core_VERSION}/voicevox_core-${OS}-${ARCH}-${DEVICE}-${voicevox_core_VERSION}.zip)
-set(open_jtalk_dict_URL https://jaist.dl.sourceforge.net/project/open-jtalk/Dictionary/open_jtalk_dic-1.11/open_jtalk_dic_utf_8-1.11.tar.gz)
-
-# voicevox_core, open_jtalk_dictの取得, インストール
-include(FetchContent)
-FetchContent_Declare(voicevox_core
-  URL ${voicevox_core_URL}
-)
-FetchContent_Declare(open_jtalk_dict
-  URL ${open_jtalk_dict_URL}
-)
-FetchContent_MakeAvailable(voicevox_core open_jtalk_dict)
-
 install(
-  DIRECTORY ${voicevox_core_SOURCE_DIR}/
+  DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/voicevox_core/
   DESTINATION lib
 )
-
-install(
-  DIRECTORY ${open_jtalk_dict_SOURCE_DIR}/
-  DESTINATION lib/open_jtalk_dict
-)
-
-# voicevox_additional_librariesの取得, インストール
-if(DEFINED voicevox_additional_libraries_URL)
-  FetchContent_Declare(voicevox_additional_libraries
-    URL ${voicevox_additional_libraries_URL}
-  )
-  FetchContent_MakeAvailable(voicevox_additional_libraries)
-
-  install(
-    DIRECTORY ${voicevox_additional_libraries_SOURCE_DIR}/
-    DESTINATION lib
-  )
-endif()
 
 # ヘッダファイル生成
 configure_file(
@@ -76,7 +61,7 @@ configure_file(
 
 install(
   FILES
-    ${voicevox_core_SOURCE_DIR}/voicevox_core.h
+    ${CMAKE_CURRENT_BINARY_DIR}/voicevox_core/voicevox_core.h
     ${CMAKE_CURRENT_BINARY_DIR}/open_jtalk_dict_dir.h
   DESTINATION include/${PROJECT_NAME}/
 )

@@ -1,1 +1,1 @@
-#define OPEN_JTALK_DICT_DIR "@CMAKE_INSTALL_PREFIX@/lib/open_jtalk_dict"
+#define OPEN_JTALK_DICT_DIR "@CMAKE_INSTALL_PREFIX@/lib/open_jtalk_dic_utf_8-1.11"

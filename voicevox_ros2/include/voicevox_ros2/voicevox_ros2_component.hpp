@@ -16,6 +16,7 @@
 
 #pragma once
 
+#include <string>
 #include <vector>
 
 #include <rclcpp/rclcpp.hpp>
@@ -28,17 +29,9 @@
 #include "voicevox_ros2_msgs/msg/talk.hpp"
 
 #include "mixer.hpp"
-#include "queue.hpp"
 
 namespace tutrobo {
 class VoicevoxRos2 : public rclcpp::Node {
-  Queue<voicevox_ros2_msgs::msg::Talk, 10> talk_queue_;
-  std::thread talk_thread_;
-  rclcpp::Subscription<voicevox_ros2_msgs::msg::Talk>::SharedPtr
-      voicevox_ros2_sub_;
-
-  static inline Mixer mixer;
-
 public:
   VoicevoxRos2(const rclcpp::NodeOptions &options)
       : VoicevoxRos2("", options) {}
@@ -79,26 +72,15 @@ public:
     Mix_OpenAudio(24000, AUDIO_S16LSB, 1, 4096);
     Mix_ChannelFinished([](int channel) { mixer.stop(channel); });
 
-    // スレッド立ち上げ
-    talk_thread_ = std::thread{&VoicevoxRos2::voicevox_talk, this};
-
     // サブスクライバ
     voicevox_ros2_sub_ =
         this->create_subscription<voicevox_ros2_msgs::msg::Talk>(
             "voicevox_ros2", rclcpp::QoS(10),
-            [this](const voicevox_ros2_msgs::msg::Talk::SharedPtr msg) {
-              if (msg->queuing) {
-                talk_queue_.push_back(*msg);
-              } else {
-                talk_queue_.push_front(*msg);
-              }
-            });
+            std::bind(&VoicevoxRos2::voicevox_ros2_callback, this,
+                      std::placeholders::_1));
   }
 
   ~VoicevoxRos2() {
-    talk_queue_.abort();
-    talk_thread_.join();
-
     // 音声をすべて停止
     mixer.stop_all();
 
@@ -110,33 +92,35 @@ public:
   }
 
 private:
-  void voicevox_talk() {
-    voicevox_ros2_msgs::msg::Talk msg;
+  rclcpp::Subscription<voicevox_ros2_msgs::msg::Talk>::SharedPtr
+      voicevox_ros2_sub_;
 
-    while (this->talk_queue_.pop(msg)) {
-      if (!voicevox_is_model_loaded(msg.speaker_id)) {
-        RCLCPP_ERROR(this->get_logger(), "Model id %d is not loaded.",
-                     msg.speaker_id);
-        continue;
-      }
+  static inline Mixer mixer;
 
-      RCLCPP_INFO(this->get_logger(), "Synthesizing \"%s\"...",
-                  msg.text.c_str());
-      [[maybe_unused]] size_t wav_size = 0;
-      uint8_t *wav = nullptr;
-      VoicevoxResultCode voicevox_result =
-          voicevox_tts(msg.text.c_str(), msg.speaker_id,
-                       voicevox_make_default_tts_options(), &wav_size, &wav);
-      if (voicevox_result != VOICEVOX_RESULT_OK) {
-        RCLCPP_ERROR(this->get_logger(), "%s",
-                     voicevox_error_result_to_message(voicevox_result));
-      }
+  void
+  voicevox_ros2_callback(const voicevox_ros2_msgs::msg::Talk::SharedPtr msg) {
+    if (!voicevox_is_model_loaded(msg->speaker_id)) {
+      RCLCPP_ERROR(this->get_logger(), "Model id %d is not loaded.",
+                   msg->speaker_id);
+      return;
+    }
 
-      if (msg.queuing) {
-        mixer.enqueue(Mix_QuickLoad_WAV(wav));
-      } else {
-        mixer.play(Mix_QuickLoad_WAV(wav));
-      }
+    RCLCPP_INFO(this->get_logger(), "Synthesizing \"%s\"...",
+                msg->text.c_str());
+    [[maybe_unused]] size_t wav_size = 0;
+    uint8_t *wav = nullptr;
+    VoicevoxResultCode voicevox_result =
+        voicevox_tts(msg->text.c_str(), msg->speaker_id,
+                     voicevox_make_default_tts_options(), &wav_size, &wav);
+    if (voicevox_result != VOICEVOX_RESULT_OK) {
+      RCLCPP_ERROR(this->get_logger(), "%s",
+                   voicevox_error_result_to_message(voicevox_result));
+    }
+
+    if (msg->queuing) {
+      mixer.enqueue(Mix_QuickLoad_WAV(wav));
+    } else {
+      mixer.play(Mix_QuickLoad_WAV(wav));
     }
   }
 };
