@@ -26,7 +26,6 @@ find_package(voicevox_ros2_msgs REQUIRED)
 add_library(${PROJECT_NAME}_component SHARED src/voicevox_ros2_component.cpp)
 target_include_directories(${PROJECT_NAME}_component PRIVATE include)
 target_link_libraries(${PROJECT_NAME}_component
-  pthread
   SDL2
   SDL2_mixer
 )
